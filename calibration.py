@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from PyQt4 import QtGui, QtCore
 from UiPy_Dialog_calibration import Ui_Dialog_calibration
+from UiPy_Dialog_showfitting import Ui_Dialog_showfitting
 import numpy as np
 import struct
 import os
@@ -11,10 +12,36 @@ import posix_ipc as posix
 import threading
 import pywt
 from math import pi,sqrt
-import matplotlib.pyplot as plt
+import pyqtgraph as pg
+
+
+class Code_Dialog_showfitting(Ui_Dialog_showfitting):
+    signal_showfitting = QtCore.pyqtSignal(list)
+
+    def __init__(self,parent=None):
+        super(Code_Dialog_showfitting, self).__init__()
+        self.setupUi(self)
+        self.widget.setLabel('left', "time difference/ms")
+        self.widget.setLabel('bottom', "location/cm")
+        self.widget.setTitle("linear fitting")
+        self.fitting_line=pg.PlotDataItem(pen='b')
+        self.data_points=pg.ScatterPlotItem(brush='r')
+        self.widget.addItem(self.fitting_line)
+        self.widget.addItem(self.data_points)
+        self.signal_showfitting.connect(self.showfitting)
+    
+    @QtCore.pyqtSlot(list)
+    def showfitting(self,data):
+        x = np.array(data[0])
+        y = np.array(data[1])
+        self.data_points.setData(x,y)
+        func = np.polyfit(x,y,1)
+        yf = func[0] * x + func[1]
+        self.fitting_line.setData(x,yf)
 
 class Code_Dialog_calibration(Ui_Dialog_calibration):
     signal_calculatecorr = QtCore.pyqtSignal(str)
+    signal_calibrate = QtCore.pyqtSignal(str)
 #location = (self.sensor1_loc + self.sensor2_loc - corr * self.card1_acoustic_speed) / 2
 
     def __init__(self, parent=None):
@@ -23,9 +50,10 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
         self.dict_fitting = {}
         self.pushButton_start_to_capture.clicked.connect(self.start_to_capture)
         self.pushButton_change_location.clicked.connect(self.change_location)
+        self.pushButton_calculate.clicked.connect(self.calculate)
         self.checkBox_choose_path.stateChanged.connect(self.set_path_choose)
+        self.signal_calibrate.connect(self.calibrate)
         self.signal_calculatecorr.connect(self.calculatecorr)
-        self.calibrate("newboard")
 
     def start_to_capture(self):
         if self.lineEdit_sensor1_location.text() == "":
@@ -110,7 +138,13 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
             self.pushButton_start_to_capture.setEnabled(True)  
             self.pushButton_change_location.setEnabled(True)
             self.textEdit_time_difference.setEnabled(True) 
-            self.comboBox_choose_card.setEnabled(True)  
+            self.comboBox_choose_card.setEnabled(True)
+
+    def calculate(self):
+        if self.lineEdit_path.isEnabled():
+            self.signal_calibrate.emit(self.lineEdit_path.text())
+        else:
+            self.signal_calibrate.emit("card1_cali")
 
     @QtCore.pyqtSlot(str)
     def calculatecorr(self,filepath):
@@ -232,12 +266,15 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
         freq,error = min(result.items(), key=lambda x: x[1])
         self.lineEdit_best_frequency.setText(str(freq))
 
-        x = np.array(dict_fitting[freq][0])
-        y = np.array(dict_fitting[freq][1])
-        func = np.polyfit(x,y,1)
-        yf = x * func[0] + func[1]
-        plt.plot(x,y,'o')
-        plt.plot(x,yf,'-')
+        #x = np.array(dict_fitting[freq][0])
+        #y = np.array(dict_fitting[freq][1])
+        #func = np.polyfit(x,y,1)
+        #yf = x * func[0] + func[1]
+        #plt.plot(x,y,'o')
+        #plt.plot(x,yf,'-')
+        self.ui_fitting = Code_Dialog_showfitting()
+        self.ui_fitting.show()
+        self.ui_fitting.signal_showfitting.emit(dict_fitting[freq])
 
     def closeEvent(self,event):
         event.accept()
@@ -253,7 +290,6 @@ def main():
     app = QtGui.QApplication(sys.argv)
     ui_calibration = Code_Dialog_calibration()
     ui_calibration.show()
-    plt.show()
     ret=app.exec_()
     ui_calibration.flag.set()
     ui_calibration.running.clear()
