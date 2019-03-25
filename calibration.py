@@ -42,7 +42,6 @@ class Code_Dialog_showfitting(Ui_Dialog_showfitting):
 class Code_Dialog_calibration(Ui_Dialog_calibration):
     signal_calculatecorr = QtCore.pyqtSignal(str)
     signal_calibrate = QtCore.pyqtSignal(str)
-#location = (self.sensor1_loc + self.sensor2_loc - corr * self.card1_acoustic_speed) / 2
 
     def __init__(self, parent=None):
         super(Code_Dialog_calibration, self).__init__()
@@ -277,12 +276,11 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
         freq,error = min(result.items(), key=lambda x: x[1])
         self.lineEdit_best_frequency.setText(str(freq))
 
-        #x = np.array(dict_fitting[freq][0])
-        #y = np.array(dict_fitting[freq][1])
-        #func = np.polyfit(x,y,1)
-        #yf = x * func[0] + func[1]
-        #plt.plot(x,y,'o')
-        #plt.plot(x,yf,'-')
+        x = np.array(dict_fitting[freq][0])
+        y = np.array(dict_fitting[freq][1])
+        func = np.polyfit(x,y,1)
+        self.lineEdit_acoustic_speed.setText("%.1f"%(20.0 / func[0]))
+
         self.ui_fitting = Code_Dialog_showfitting()
         self.ui_fitting.show()
         self.ui_fitting.signal_showfitting.emit(dict_fitting[freq])
