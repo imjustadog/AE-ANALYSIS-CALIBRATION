@@ -343,6 +343,19 @@
     <string>自由选取样本</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="pushButton_stop_to_capture">
+   <property name="geometry">
+    <rect>
+     <x>260</x>
+     <y>230</y>
+     <width>81</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>停止采集</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

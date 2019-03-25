@@ -49,11 +49,14 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
         self.setupUi(self)
         self.dict_fitting = {}
         self.pushButton_start_to_capture.clicked.connect(self.start_to_capture)
+        self.pushButton_stop_to_capture.clicked.connect(self.stop_capture)
         self.pushButton_change_location.clicked.connect(self.change_location)
         self.pushButton_calculate.clicked.connect(self.calculate)
         self.checkBox_choose_path.stateChanged.connect(self.set_path_choose)
         self.signal_calibrate.connect(self.calibrate)
         self.signal_calculatecorr.connect(self.calculatecorr)
+        self.pushButton_start_to_capture.setEnabled(True)
+        self.pushButton_stop_to_capture.setEnabled(False)
 
     def start_to_capture(self):
         if self.lineEdit_sensor1_location.text() == "":
@@ -78,6 +81,9 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
         self.flag.clear()
         self.receive_thread = threading.Thread(name = "datareceiver", target = self.receive_message_queue)
         self.receive_thread.start()
+
+        self.pushButton_start_to_capture.setEnabled(False)
+        self.pushButton_stop_to_capture.setEnabled(True)
         
         self.mqd=posix.MessageQueue("/mqd", flags=posix.O_CREAT, mode=0o644)
         self.mqf=posix.MessageQueue("/mqf", flags=posix.O_CREAT, mode=0o644)
@@ -87,11 +93,12 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
         self.lineEdit_sensor1_location.setEnabled(True)
         self.lineEdit_sensor2_location.setEnabled(True)
         self.lineEdit_source_location.setEnabled(True)
+        self.stop_capture()
 
     def start_capture(self):
         self.dict_fitting[self.source_loc] = []
-        #os.system("./streamread xillybus_read1_32 card1_cali/%d &"%(self.source_loc * 100))
-        os.system("./out1 card1_cali %d &"%(self.source_loc * 100))
+        os.system("./streamread xillybus_read1_32 card1_cali/%d &"%(self.source_loc * 100))
+        #os.system("./out1 card1_cali %d &"%(self.source_loc * 100))
         mesg,_=self.mqd.receive()
         mesg_receive = mesg.decode()
         if mesg_receive[0] == 'x' :
@@ -103,9 +110,11 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
             self.flag.set()
 
     def stop_capture(self):
+        self.pushButton_start_to_capture.setEnabled(True)
+        self.pushButton_stop_to_capture.setEnabled(False)
         self.flag.clear()
-        #os.system("pkill streamread")
-        os.system("pkill out1")
+        os.system("pkill streamread")
+        #os.system("pkill out1")
 
     def receive_message_queue(self):
         while self.running.isSet():
@@ -215,6 +224,8 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
                 dd = int(filename)
                 countlisttemp = os.listdir(filepath + "/" + filename)
                 for count in countlisttemp:
+                    if int(count) > 10:
+                        continue
                     path = filepath + "/" + filename + "/" + count
                     with open(path, "rb") as fb:
                         data = fb.read()
@@ -278,8 +289,8 @@ class Code_Dialog_calibration(Ui_Dialog_calibration):
 
     def closeEvent(self,event):
         event.accept()
-        os.system("pkill out1")
-        #os.system("pkill streamread")
+        #os.system("pkill out1")
+        os.system("pkill streamread")
         self.mqd.close()
         self.mqf.close()
         posix.unlink_message_queue("/mqd")
@@ -293,8 +304,8 @@ def main():
     ret=app.exec_()
     ui_calibration.flag.set()
     ui_calibration.running.clear()
-    os.system("pkill out1")
-    #os.system("pkill streamread")
+    #os.system("pkill out1")
+    os.system("pkill streamread")
     ui_calibration.mqd.close()
     ui_calibration.mqf.close()
     posix.unlink_message_queue("/mqd")

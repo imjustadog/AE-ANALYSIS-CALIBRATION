@@ -108,6 +108,9 @@ class Ui_Dialog_calibration(QtGui.QDialog):
         self.checkBox_choose_path = QtGui.QCheckBox(Dialog_calibration)
         self.checkBox_choose_path.setGeometry(QtCore.QRect(10, 470, 121, 22))
         self.checkBox_choose_path.setObjectName(_fromUtf8("checkBox_choose_path"))
+        self.pushButton_stop_to_capture = QtGui.QPushButton(Dialog_calibration)
+        self.pushButton_stop_to_capture.setGeometry(QtCore.QRect(260, 230, 81, 27))
+        self.pushButton_stop_to_capture.setObjectName(_fromUtf8("pushButton_stop_to_capture"))
 
         self.retranslateUi(Dialog_calibration)
         QtCore.QMetaObject.connectSlotsByName(Dialog_calibration)
@@ -134,4 +137,5 @@ class Ui_Dialog_calibration(QtGui.QDialog):
         self.pushButton_start_to_capture.setText(_translate("Dialog_calibration", "采集开始", None))
         self.pushButton_choose_path.setText(_translate("Dialog_calibration", "...", None))
         self.checkBox_choose_path.setText(_translate("Dialog_calibration", "自由选取样本", None))
+        self.pushButton_stop_to_capture.setText(_translate("Dialog_calibration", "停止采集", None))
 
